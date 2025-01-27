@@ -26,6 +26,8 @@
 cmake_minimum_required(VERSION 3.7...3.16 FATAL_ERROR)
 message(STATUS "Using CMake version ${CMAKE_VERSION}")
 
+enable_language(CXX)
+
 # Collect command-line arguments for buildinfo.txt.
 # Must reside at the top of the script to work as expected.
 set(_cmake_args "")
@@ -45,6 +47,9 @@ if(NOT "$ENV{CURL_BUILDINFO}$ENV{CURL_CI}$ENV{CI}" STREQUAL "")
     endif()
   endforeach()
 endif()
+
+find_package(cifuzz NO_SYSTEM_ENVIRONMENT_PATH)
+enable_fuzz_testing()
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake" ${CMAKE_MODULE_PATH})
 include(Utilities)
@@ -2537,3 +2542,6 @@ file(WRITE "${PROJECT_BINARY_DIR}/buildinfo.txt" "# This is a generated file.  D
 if(NOT "$ENV{CURL_BUILDINFO}$ENV{CURL_CI}$ENV{CI}" STREQUAL "")
   message(STATUS "\n${_buildinfo}")
 endif()
+
+add_subdirectory(cifuzz-spark)
+
