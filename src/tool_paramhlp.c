@@ -575,9 +575,11 @@ static CURLcode checkpasswd(const char *kind, /* for what purpose */
 
     /* build a nice-looking prompt */
     if(!i && last)
-      curl_msnprintf(prompt, sizeof(prompt),
-                     "Enter %s password for user '%s':",
-                     kind, *userpwd);
+      // CHANGED FOR FUZZING
+      1;
+      //msnprintf(prompt, sizeof(prompt),
+      //          "Enter %s password for user '%s':",
+      //          kind, *userpwd);
     else
       curl_msnprintf(prompt, sizeof(prompt),
                      "Enter %s password for user '%s' on URL #%zu:",

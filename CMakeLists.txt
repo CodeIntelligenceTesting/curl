@@ -26,6 +26,8 @@
 cmake_minimum_required(VERSION 3.7...3.16 FATAL_ERROR)
 message(STATUS "Using CMake version ${CMAKE_VERSION}")
 
+add_compile_options(-g -O0)
+
 enable_language(CXX)
 
 # Collect command-line arguments for buildinfo.txt.
