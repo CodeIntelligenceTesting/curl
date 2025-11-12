@@ -155,7 +155,7 @@ FUZZ_TEST(const uint8_t *data, size_t size) {
       for(int i = 0; i < THREAD_SIZE; i++) {
         if(thread[i]) {
           Curl_thread_join(&thread[i]);
-          Curl_thread_destroy(thread[i]);
+          //Curl_thread_destroy(thread[i]);
         }
       }
 

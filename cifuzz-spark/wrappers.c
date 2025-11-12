@@ -15,7 +15,6 @@
 #include "url.h" /* for Curl_safefree() */
 #include "multiif.h"
 #include "sockaddr.h" /* required for Curl_sockaddr_storage */
-#include "inet_ntop.h"
 
 
 static const char *mock_input = "foobar\n";

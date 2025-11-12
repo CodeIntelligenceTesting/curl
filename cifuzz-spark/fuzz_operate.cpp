@@ -1,25 +1,30 @@
-#include <assert.h>
 #include <cifuzz/cifuzz.h>
 #include <fuzzer/FuzzedDataProvider.h>
 #include "tool_setup.h"
-#include <sys/stat.h>
+
+#ifndef UNDER_CE
 #include <signal.h>
-#include <iostream>
-#include <iomanip>
-#include <cctype>
-#include <cstring>
+#endif
+
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
-#include "curlx.h"
-#include "tool_doswin.h"
-#include "tool_vms.h"
-#include "tool_main.h"
+#endif
+
+#include <cctype>
+#include <climits>
+#include <cstdlib>
+#include <cstring>
+#include <string>
+
 #include "memdebug.h"
+
 extern "C" {
-  #include "tool_cfgable.h"
-  #include "tool_msgs.h"
-  #include "tool_operate.h"
-  #include "tool_libinfo.h"
-  #include "tool_stderr.h"
+#include "tool_cfgable.h"
+#include "tool_msgs.h"
+#include "tool_operate.h"
+#include "tool_libinfo.h"
+#include "tool_stderr.h"
+#include "tool_vms.h"
 }
 
 // Define missing functions inline where necessary.
@@ -42,118 +47,104 @@ static int main_checkfds(void)
 static void memory_tracking_init(void)
 {
   char *env;
+  /* if CURL_MEMDEBUG is set, this starts memory tracking message logging */
   env = curl_getenv("CURL_MEMDEBUG");
   if(env) {
-    char fname[CURL_MT_LOGFNAME_BUFSIZE];
-    if(strlen(env) >= CURL_MT_LOGFNAME_BUFSIZE)
-      env[CURL_MT_LOGFNAME_BUFSIZE-1] = '\0';
+    /* use the value as filename */
+    char fname[512];
+    if(strlen(env) >= sizeof(fname))
+      env[sizeof(fname)-1] = '\0';
     strcpy(fname, env);
     curl_free(env);
     curl_dbg_memdebug(fname);
   }
+  /* if CURL_MEMLIMIT is set, this enables fail-on-alloc-number-N feature */
   env = curl_getenv("CURL_MEMLIMIT");
   if(env) {
-    char *endptr;
-    long num = strtol(env, &endptr, 10);
-    if((endptr != env) && (endptr == env + strlen(env)) && (num > 0))
-      curl_dbg_memlimit(num);
+    curl_off_t num;
+    const char *p = env;
+    if(!curlx_str_number(&p, &num, LONG_MAX))
+      curl_dbg_memlimit((long)num);
     curl_free(env);
   }
 }
 #else
-#  define memory_tracking_init() Curl_nop_stmt
+#  define memory_tracking_init() tool_nop_stmt
 #endif
 
-static CURLcode main_init(struct GlobalConfig *config)
+static void destroyArgv(argv_item_t *argv, int count)
 {
-  CURLcode result = CURLE_OK;
-  config->showerror = FALSE;
-  config->styled_output = TRUE;
-  config->parallel_max = PARALLEL_DEFAULT;
+  if(!argv)
+    return;
 
-  config->first = config->last = (struct OperationConfig*)malloc(sizeof(struct OperationConfig));
-  if(config->first) {
-    result = curl_global_init(CURL_GLOBAL_DEFAULT);
-    if(!result) {
-      result = get_libcurl_info();
-      if(!result) {
-        config_init(config->first);
-        config->first->global = config;
-      }
-      else {
-        errorf(config, "error retrieving curl library information");
-        free(config->first);
-      }
-    }
-    else {
-      errorf(config, "error initializing curl library");
-      free(config->first);
-    }
+  for(int i = 0; i < count; ++i) {
+    free(argv[i]);
+    argv[i] = nullptr;
   }
-  else {
-    errorf(config, "error initializing curl");
-    result = CURLE_FAILED_INIT;
-  }
-  return result;
+  free(argv);
 }
 
-static void free_globalconfig(struct GlobalConfig *config)
+static argv_item_t *createArgv(FuzzedDataProvider &fdp, int *argc_out)
 {
-  Curl_safefree(config->trace_dump);
+  if(!argc_out)
+    return nullptr;
 
-  if(config->trace_fopened && config->trace_stream)
-    fclose(config->trace_stream);
-  config->trace_stream = NULL;
+  int argc = fdp.ConsumeIntegralInRange<int>(1, 100);
+  argv_item_t *argv =
+    static_cast<argv_item_t *>(calloc(static_cast<size_t>(argc + 1),
+                                      sizeof(*argv)));
+  if(!argv) {
+    *argc_out = 0;
+    return nullptr;
+  }
 
-  Curl_safefree(config->libcurl);
-}
+  const char *dummyProgramName = "/home/patrice/CI/Projects/curl/build/src/curl";
+  argv[0] = strdup(dummyProgramName);
+  if(!argv[0]) {
+    destroyArgv(argv, 0);
+    *argc_out = 0;
+    return nullptr;
+  }
 
-static void main_free(struct GlobalConfig *config)
-{
-  curl_global_cleanup();
-  free_globalconfig(config);
-  config_free(config->last);
-  config->first = NULL;
-  config->last = NULL;
-}
-
-static char** createArgv(FuzzedDataProvider& fdp, int& argc) {
-  argc = fdp.ConsumeIntegralInRange<int>(1, 100);
-
-  // Add progam name
-  const char* dummyProgramName = "/home/patrice/CI/Projects/curl/build/src/curl";
-  char** argv = new char*[argc + 1];
-  argv[0] = new char[strlen(dummyProgramName) + 1];
-  strcpy(argv[0], dummyProgramName);
-
-
-  for (int i = 1; i < argc; ++i) {
-    size_t length = fdp.ConsumeIntegralInRange<size_t>(2, 20);
-    argv[i] = new char[length + 1];
-    memset(argv[i], 0, length + 1); 
-
-    auto arg = fdp.ConsumeBytesAsString(length);
-    
-    strcpy(argv[i], arg.c_str());
-    if (isdigit(argv[i][0]) || argv[i][0] == 0x0) {
-      argv[i][0] = '0';
+  int allocated = 1;
+  for(int i = 1; i < argc; ++i) {
+    size_t length = fdp.ConsumeIntegralInRange<size_t>(1, 32);
+    char *argbuf = static_cast<char *>(malloc(length + 1));
+    if(!argbuf) {
+      destroyArgv(argv, allocated);
+      *argc_out = 0;
+      return nullptr;
     }
 
-      // std::cerr << "Argument " << i << ": ";
-      // for (size_t j = 0; j < length; ++j) {
-      //     std::cerr << std::hex << std::setw(2) << std::setfill('0')
-      //               << static_cast<int>(static_cast<unsigned char>(argv[i][j])) << " ";
-      // }
-      // std::cerr << std::dec << std::endl;
+    std::string bytes = fdp.ConsumeBytesAsString(length);
+    size_t copy_len = bytes.size();
+    if(copy_len > length)
+      copy_len = length;
+    if(copy_len)
+      memcpy(argbuf, bytes.data(), copy_len);
+    if(copy_len < length)
+      memset(argbuf + copy_len, 0, length - copy_len);
+    argbuf[length] = '\0';
+
+    if(argbuf[0] == '\0')
+      argbuf[0] = '0';
+
+    argv[i] = argbuf;
+    ++allocated;
   }
-  std::cerr << std::endl;
 
-  argv[argc] = nullptr;
-
+  *argc_out = argc;
   return argv;
 }
 
-extern size_t feature_count;
+static void reset_global_config(void)
+{
+  if(global) {
+    struct GlobalConfig *cfg = global;
+    memset(cfg, 0, sizeof(*cfg));
+    global = nullptr;
+  }
+}
 
 FUZZ_TEST_SETUP() {
   tool_init_stderr();
@@ -162,33 +153,44 @@ FUZZ_TEST_SETUP() {
 FUZZ_TEST(const uint8_t *data, size_t size) {
 
   FuzzedDataProvider fdp(data, size);
-  struct GlobalConfig global;
-  memset(&global, 0, sizeof(global));
 
-  int argc;
-  char** argv = createArgv(fdp, argc);
+  int argc = 0;
+  argv_item_t *argv = createArgv(fdp, &argc);
+  if(!argv)
+    return;
 
   if(main_checkfds()) {
-    errorf(&global, "out of file descriptors");
+    destroyArgv(argv, argc);
     return;
   }
 
+#if defined(HAVE_SIGNAL) && defined(SIGPIPE)
+  (void)signal(SIGPIPE, SIG_IGN);
+#endif
+
   memory_tracking_init();
-  
-  CURLcode result = main_init(&global);
-  if(!result) {
-    result = operate(&global, argc, argv);
-    main_free(&global);
+
+  CURLcode init_result = globalconf_init();
+#ifdef __VMS
+  CURLcode result = init_result;
+#endif
+  if(!init_result) {
+#ifdef __VMS
+    CURLcode operate_result = operate(argc, argv);
+    result = operate_result;
+#else
+    (void)operate(argc, argv);
+#endif
+    globalconf_free();
   }
 
-  for(int i = 0; i < argc; ++i) {
-    delete[] argv[i];
-  }
-  delete[] argv;
+  destroyArgv(argv, argc);
 
   feature_count = 0;
 
 #ifdef __VMS
   vms_special_exit(result, vms_show);
 #endif
+
+  reset_global_config();
 }

@@ -4,6 +4,7 @@
 #target_include_directories({{ .FuzzTestName }} PRIVATE
 #  "${PROJECT_BINARY_DIR}/lib"            # for "curl_config.h"
 #  "${PROJECT_SOURCE_DIR}/lib"            # for "curl_setup.h"
+#  "${PROJECT_SOURCE_DIR}/lib/curlx"
 #  "${PROJECT_SOURCE_DIR}/src"
 #  "${PROJECT_SOURCE_DIR}/tests/libtest"
 #)
@@ -17,22 +18,12 @@ target_include_directories(wrappers PRIVATE
 "${PROJECT_SOURCE_DIR}/src"
 "${PROJECT_SOURCE_DIR}/tests/libtest"
 )
-
-
-add_fuzz_test(fuzz_operate fuzz_operate.cpp)
-target_link_libraries(fuzz_operate PRIVATE curltool curlu wrappers -Wl,--wrap=read -Wl,--wrap=poll)
-target_link_libraries(fuzz_operate PRIVATE curltool curlu wrappers)
-target_include_directories(fuzz_operate PRIVATE
-  "${PROJECT_BINARY_DIR}/lib"            # for "curl_config.h"
-  "${PROJECT_SOURCE_DIR}/lib"            # for "curl_setup.h"
-  "${PROJECT_SOURCE_DIR}/src"
-  "${PROJECT_SOURCE_DIR}/tests/libtest"
-)
 add_fuzz_test(fuzz_curl_easy_perform fuzz_curl_easy_perform.cpp)
 target_link_libraries(fuzz_curl_easy_perform PRIVATE curltool curlu)
 target_include_directories(fuzz_curl_easy_perform PRIVATE
   "${PROJECT_BINARY_DIR}/lib"            # for "curl_config.h"
   "${PROJECT_SOURCE_DIR}/lib"            # for "curl_setup.h"
+  "${PROJECT_SOURCE_DIR}/lib/curlx"
   "${PROJECT_SOURCE_DIR}/src"
   "${PROJECT_SOURCE_DIR}/tests/libtest"
 )
@@ -41,6 +32,7 @@ target_link_libraries(fuzz_curl_multi_socket_action PRIVATE curltool curlu)
 target_include_directories(fuzz_curl_multi_socket_action PRIVATE
   "${PROJECT_BINARY_DIR}/lib"            # for "curl_config.h"
   "${PROJECT_SOURCE_DIR}/lib"            # for "curl_setup.h"
+  "${PROJECT_SOURCE_DIR}/lib/curlx"
   "${PROJECT_SOURCE_DIR}/src"
   "${PROJECT_SOURCE_DIR}/tests/libtest"
 )
@@ -49,14 +41,7 @@ target_link_libraries(fuzz_curl_multi_perform PRIVATE curltool curlu)
 target_include_directories(fuzz_curl_multi_perform PRIVATE
   "${PROJECT_BINARY_DIR}/lib"            # for "curl_config.h"
   "${PROJECT_SOURCE_DIR}/lib"            # for "curl_setup.h"
-  "${PROJECT_SOURCE_DIR}/src"
-  "${PROJECT_SOURCE_DIR}/tests/libtest"
-)
-add_fuzz_test(fuzz_Curl_resolv_timeout fuzz_Curl_resolv_timeout.cpp)
-target_link_libraries(fuzz_Curl_resolv_timeout PRIVATE curltool curlu)
-target_include_directories(fuzz_Curl_resolv_timeout PRIVATE
-  "${PROJECT_BINARY_DIR}/lib"            # for "curl_config.h"
-  "${PROJECT_SOURCE_DIR}/lib"            # for "curl_setup.h"
+  "${PROJECT_SOURCE_DIR}/lib/curlx"
   "${PROJECT_SOURCE_DIR}/src"
   "${PROJECT_SOURCE_DIR}/tests/libtest"
 )
@@ -65,6 +50,7 @@ target_link_libraries(fuzz_Curl_doh PRIVATE curltool curlu)
 target_include_directories(fuzz_Curl_doh PRIVATE
   "${PROJECT_BINARY_DIR}/lib"            # for "curl_config.h"
   "${PROJECT_SOURCE_DIR}/lib"            # for "curl_setup.h"
+  "${PROJECT_SOURCE_DIR}/lib/curlx"
   "${PROJECT_SOURCE_DIR}/src"
   "${PROJECT_SOURCE_DIR}/tests/libtest"
 )
@@ -73,14 +59,7 @@ target_link_libraries(fuzz_parse_args PRIVATE curltool curlu)
 target_include_directories(fuzz_parse_args PRIVATE
   "${PROJECT_BINARY_DIR}/lib"            # for "curl_config.h"
   "${PROJECT_SOURCE_DIR}/lib"            # for "curl_setup.h"
-  "${PROJECT_SOURCE_DIR}/src"
-  "${PROJECT_SOURCE_DIR}/tests/libtest"
-)
-add_fuzz_test(fuzz_getparameter fuzz_getparameter.cpp)
-target_link_libraries(fuzz_getparameter PRIVATE curltool curlu)
-target_include_directories(fuzz_getparameter PRIVATE
-  "${PROJECT_BINARY_DIR}/lib"            # for "curl_config.h"
-  "${PROJECT_SOURCE_DIR}/lib"            # for "curl_setup.h"
+  "${PROJECT_SOURCE_DIR}/lib/curlx"
   "${PROJECT_SOURCE_DIR}/src"
   "${PROJECT_SOURCE_DIR}/tests/libtest"
 )
@@ -89,6 +68,7 @@ target_link_libraries(fuzz_parseconfig PRIVATE curltool curlu)
 target_include_directories(fuzz_parseconfig PRIVATE
   "${PROJECT_BINARY_DIR}/lib"            # for "curl_config.h"
   "${PROJECT_SOURCE_DIR}/lib"            # for "curl_setup.h"
+  "${PROJECT_SOURCE_DIR}/lib/curlx"
   "${PROJECT_SOURCE_DIR}/src"
   "${PROJECT_SOURCE_DIR}/tests/libtest"
 )
@@ -97,6 +77,7 @@ target_link_libraries(fuzz_tool_setopt_mimepost PRIVATE curltool curlu)
 target_include_directories(fuzz_tool_setopt_mimepost PRIVATE
   "${PROJECT_BINARY_DIR}/lib"            # for "curl_config.h"
   "${PROJECT_SOURCE_DIR}/lib"            # for "curl_setup.h"
+  "${PROJECT_SOURCE_DIR}/lib/curlx"
   "${PROJECT_SOURCE_DIR}/src"
   "${PROJECT_SOURCE_DIR}/tests/libtest"
 )
@@ -105,6 +86,7 @@ target_link_libraries(fuzz_curl_share_setopt PRIVATE curltool curlu)
 target_include_directories(fuzz_curl_share_setopt PRIVATE
   "${PROJECT_BINARY_DIR}/lib"            # for "curl_config.h"
   "${PROJECT_SOURCE_DIR}/lib"            # for "curl_setup.h"
+  "${PROJECT_SOURCE_DIR}/lib/curlx"
   "${PROJECT_SOURCE_DIR}/src"
   "${PROJECT_SOURCE_DIR}/tests/libtest"
 )

@@ -6,6 +6,7 @@ extern "C" {
   #include "urldata.h"
   #include "hostip.h"
   #include "share.h"
+  #include "mmintrin.h"
   // The header where Curl_doh might be declared if available
   //#include "doh.h"
 }
