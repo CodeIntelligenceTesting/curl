@@ -73,8 +73,7 @@ tests/string
 tests/config
 tests/ech-log/
 
-.cifuzz/
-.cifuzz-corpus/
-.cifuzz-finding/**
+.cifuzz*/
+.cifuzz-finding/*
 !.cifuzz-finding/spectacular_tapir
 .cifuzz-finding/spectacular_tapir/.lock
