@@ -69,6 +69,8 @@ enable_language(CXX)
 find_package(cifuzz NO_SYSTEM_ENVIRONMENT_PATH)
 enable_fuzz_testing()
 add_compile_options(-O0 -g)
+add_compile_options(-fsanitize=address,undefined)
+add_link_options(-fsanitize=address,undefined)
 
 
 # CMake does not recognize some targets accurately. Touch up configuration manually as a workaround.

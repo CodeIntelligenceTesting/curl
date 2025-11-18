@@ -8,6 +8,8 @@
 #include <cstring>
 #include <vector>
 
+#include <gtest/gtest.h>
+
 // External headers wrapped in extern "C".
 extern "C" {
   #include "tool_cfgable.h"
@@ -31,14 +33,7 @@ static int main_checkfds(void) {
   return 0;
 }
 
-// FUZZ_TEST_SETUP for one-time initialization tasks
-FUZZ_TEST_SETUP() {
-  // Initialize standard error output before the fuzzing process begins
-  tool_init_stderr();
-}
-
-// The main fuzz test entry point
-FUZZ_TEST(const uint8_t *data, size_t size) {
+void testFunction (const uint8_t *data, size_t size) {
   // Initialize FuzzedDataProvider to generate inputs for fuzzing
   FuzzedDataProvider fdp(data, size);
 
@@ -72,4 +67,26 @@ FUZZ_TEST(const uint8_t *data, size_t size) {
 
   // Perform cleanup
   globalconf_free();
+} 
+
+
+// FUZZ_TEST_SETUP for one-time initialization tasks
+FUZZ_TEST_SETUP() {
+  // Initialize standard error output before the fuzzing process begins
+  tool_init_stderr();
 }
+
+// The main fuzz test entry point
+FUZZ_TEST(const uint8_t *data, size_t size) {
+  testFunction(data, size);
+}
+
+TEST(OperateTests, DoubleCallTest) {
+  size_t size = 5;
+  const uint8_t* data = const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>("\\{;{\001"));
+
+  tool_init_stderr();
+  testFunction(data, size);
+  testFunction(data, size);
+}
+

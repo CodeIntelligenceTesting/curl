@@ -77,3 +77,4 @@ tests/ech-log/
 .cifuzz-finding/*
 !.cifuzz-finding/spectacular_tapir
 .cifuzz-finding/spectacular_tapir/.lock
+.vscode/
